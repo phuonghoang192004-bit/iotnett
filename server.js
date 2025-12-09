@@ -7,7 +7,7 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 
 // --- CÀI ĐẶT NGƯỠNG AN TOÀN TẠI ĐÂY ---
-const TEMP_LIMIT = 30;      // Trên 30 độ -> Bật Quạt
+const TEMP_LIMIT = 37;      // Trên 30 độ -> Bật Quạt
 const GAS_LIMIT = 1500;     // Trên 1500 -> Bật Đèn báo
 const RAIN_LIMIT = 1;       // 1 là có mưa -> Đóng Servo
 
