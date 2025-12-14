@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home AI - Ultimate Version</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+    <style>
+        /* --- 1. CSS VARIABLES (THEMING) --- */
+        :root {
+            --primary: #4e54c8;
+            --secondary: #8f94fb;
+            /* Light Mode */
+            --bg-color: #f4f7fc;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-sub: #777777;
+            --input-bg: #ffffff;
+            --border-color: #eeeeee;
+            --shadow: 0 10px 30px rgba(0,0,0,0.08);
+            
+            --danger: #ff6b6b;
+            --success: #1dd1a1;
+            --warning: #feca57;
+        }
+
+        /* Dark Mode Override */
+        body.dark-mode {
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --text-main: #e0e0e0;
+            --text-sub: #a0a0a0;
+            --input-bg: #0f3460;
+            --border-color: #2a2a4e;
+            --shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; transition: background 0.3s, color 0.3s; }
+        body { background: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+
+        /* --- 2. FLOATING CONTACT ICONS --- */
+        .contact-float {
+            position: fixed; bottom: 20px; right: 20px; z-index: 10000;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        .contact-btn {
+            width: 50px; height: 50px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.5rem; text-decoration: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+        }
+        .contact-btn:hover { transform: scale(1.1); }
+        .fb-btn { background: #1877F2; }
+        .mail-btn { background: #EA4335; }
+
+        /* --- 3. AUTH VIEW --- */
+        #auth-view { position: fixed; inset: 0; z-index: 9000; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; justify-content: center; align-items: center; }
+        .auth-card { background: rgba(255, 255, 255, 0.95); padding: 40px; width: 90%; max-width: 400px; border-radius: 24px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); position: relative; }
+        .auth-header { margin-bottom: 25px; } .auth-header h2 { color: var(--primary); font-weight: 700; } .auth-header p { color: #666; font-size: 0.9rem; }
+        .custom-input { width: 100%; padding: 14px; margin-bottom: 12px; border: 2px solid var(--border-color); border-radius: 12px; font-size: 0.95rem; outline: none; background: var(--input-bg); color: #333; }
+        .custom-input:focus { border-color: var(--secondary); }
+        .btn-gradient { width: 100%; padding: 14px; border: none; border-radius: 12px; background: linear-gradient(90deg, var(--primary), var(--secondary)); color: white; font-weight: 600; font-size: 1rem; cursor: pointer; margin-top: 10px; }
+        .switch-link { margin-top: 20px; font-size: 0.85rem; color: #666; } .switch-link a { color: var(--primary); text-decoration: none; font-weight: 600; cursor: pointer; }
+        .form-box { display: none; animation: fadeIn 0.5s ease; } .form-box.active { display: block; }
+
+        /* --- 4. DASHBOARD STYLES --- */
+        #dashboard-view, #settings-view { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; animation: slideUp 0.8s ease; }
+        
+        /* Top Bar */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: var(--card-bg); padding: 15px 25px; border-radius: 16px; box-shadow: var(--shadow); position: relative; }
+        .app-title { font-size: 1.5rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        
+        /* User Menu */
+        .user-profile-container { position: relative; cursor: pointer; }
+        .user-avatar { width: 45px; height: 45px; background: var(--secondary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; }
+        .user-dropdown {
+            position: absolute; top: 60px; right: 0; background: var(--card-bg); width: 220px;
+            border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); padding: 10px;
+            display: none; z-index: 100; border: 1px solid var(--border-color);
+        }
+        .user-dropdown.show { display: block; animation: fadeIn 0.3s; }
+        .dropdown-header { padding: 10px; border-bottom: 1px solid var(--border-color); margin-bottom: 5px; }
+        .d-name { font-weight: 700; color: var(--text-main); }
+        .d-role { font-size: 0.8rem; color: var(--text-sub); text-transform: uppercase; }
+        .dropdown-item { padding: 10px; border-radius: 8px; color: var(--text-main); display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s; }
+        .dropdown-item:hover { background: rgba(0,0,0,0.05); color: var(--primary); }
+        .dropdown-item.logout { color: var(--danger); }
+
+        /* Widget & Grid */
+        .weather-widget { background: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%); color: white; padding: 25px; border-radius: 24px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(102, 166, 255, 0.4); }
+        .w-temp { font-size: 3.5rem; font-weight: 700; line-height: 1; }
+        
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .sensor-card { background: var(--card-bg); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: space-between; }
+        .sensor-info .value { font-size: 2rem; font-weight: 700; color: var(--text-main); }
+        .sensor-icon { width: 60px; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; }
+
+        .card-temp .sensor-icon { background: rgba(255, 107, 107, 0.1); color: var(--danger); }
+        .card-humid .sensor-icon { background: rgba(0, 188, 212, 0.1); color: #00bcd4; }
+        .card-gas .sensor-icon { background: rgba(254, 202, 87, 0.1); color: var(--warning); }
+        
+        /* ALERT SECTION (Đã khôi phục) */
+        .alert-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+        .alert-item { background: var(--card-bg); padding: 20px; border-radius: 18px; text-align: center; border: 2px dashed var(--border-color); box-shadow: var(--shadow); transition: 0.3s; }
+        .alert-item i { font-size: 2rem; color: var(--text-sub); margin-bottom: 10px; transition: 0.3s; }
+        .alert-text { font-weight: 600; color: var(--text-sub); font-size: 0.9rem; }
+        
+        .danger-mode { background: #fff5f5 !important; border: 2px solid var(--danger) !important; animation: pulse 1.5s infinite; }
+        .danger-mode i { color: var(--danger) !important; }
+        .danger-mode .alert-text { color: var(--danger) !important; text-transform: uppercase; }
+        
+        .rain-mode { background: #e3f2fd !important; border: 2px solid #2196f3 !important; }
+        .rain-mode i { color: #2196f3 !important; }
+        .rain-mode .alert-text { color: #1976d2 !important; }
+
+        /* Controls */
+        .control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .control-card { background: var(--card-bg); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; justify-content: center; }
+        
+        .btn-fan-big { width: 100%; padding: 20px; border-radius: 15px; border: none; background: rgba(0,0,0,0.05); color: var(--text-sub); font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 15px; cursor: pointer; }
+        .btn-fan-big.active { background: var(--success); color: white; }
+        .btn-fan-big.disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .sao-do-box { width: 100%; padding: 15px; border-radius: 15px; background: rgba(254, 202, 87, 0.1); border: 1px solid var(--warning); text-align: center; color: var(--warning); font-weight: 600; margin-top: 15px; }
+
+        .camera-box { width: 100%; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 16/9; position: relative; display: flex; align-items: center; justify-content: center; }
+
+        /* Settings View */
+        .settings-section { background: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: var(--shadow); margin-bottom: 20px; }
+        .settings-header { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+        .settings-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        
+        /* Toggle Switch */
+        .switch-toggle { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch-toggle input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .btn-back { background: transparent; border: none; color: var(--text-sub); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; gap: 5px; margin-bottom: 20px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 107, 107, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); } }
+    </style>
+</head>
+<body>
+
+    <!-- === FLOATING CONTACT ICONS === -->
+    <div class="contact-float">
+        <a href="https://www.facebook.com/vthphuonghoang/" target="_blank" class="contact-btn fb-btn" title="Liên hệ Facebook">
+            <i class="fab fa-facebook-f"></i>
+        </a>
+        <a href="mailto:phuonghoang192004@gmail.com" class="contact-btn mail-btn" title="Gửi Email cho tôi">
+            <i class="fas fa-envelope"></i>
+        </a>
+    </div>
+
+    <!-- === AUTH VIEW === -->
+    <div id="auth-view">
+        <div class="auth-card">
+            
+            <!-- LOGIN -->
+            <div id="form-login" class="form-box active">
+                <div class="auth-header">
+                    <i class="fa-solid fa-house-signal" style="font-size: 3rem; color: var(--primary);"></i>
+                    <h2>Đăng Nhập</h2>
+                    <p>Chào mừng trở lại Smart Home</p>
+                </div>
+                <input type="email" id="login-email" class="custom-input" placeholder="Email của bạn">
+                <input type="password" id="login-pass" class="custom-input" placeholder="Mật khẩu">
+                <button onclick="handleLogin()" class="btn-gradient">ĐĂNG NHẬP</button>
+                <div class="switch-link">
+                    <a onclick="switchForm('forgot')">Quên mật khẩu?</a> <br><br>
+                    Chưa có tài khoản? <a onclick="switchForm('register')">Đăng ký ngay</a>
+                </div>
+            </div>
+
+            <!-- REGISTER -->
+            <div id="form-register" class="form-box">
+                <div class="auth-header">
+                    <h2>Tạo Tài Khoản</h2>
+                </div>
+                <input type="email" id="reg-email" class="custom-input" placeholder="Nhập Email đăng ký">
+                <input type="password" id="reg-pass" class="custom-input" placeholder="Tạo mật khẩu">
+                <input type="password" id="reg-pass-confirm" class="custom-input" placeholder="Nhập lại mật khẩu">
+                <input type="text" id="reg-code" class="custom-input" placeholder="Mã Admin (nếu có)">
+                <button onclick="requestOTP('register')" class="btn-gradient">NHẬN OTP</button>
+                <div class="switch-link">Đã có tài khoản? <a onclick="switchForm('login')">Đăng nhập</a></div>
+            </div>
+
+            <!-- FORGOT PASSWORD -->
+            <div id="form-forgot" class="form-box">
+                <div class="auth-header">
+                    <h2>Quên Mật Khẩu</h2>
+                    <p>Nhập email để đặt lại mật khẩu</p>
+                </div>
+                <input type="email" id="forgot-email" class="custom-input" placeholder="Email tài khoản">
+                <button onclick="requestOTP('forgot')" class="btn-gradient">GỬI MÃ OTP</button>
+                <div class="switch-link"><a onclick="switchForm('login')">Quay lại đăng nhập</a></div>
+            </div>
+
+            <!-- OTP & NEW PASS -->
+            <div id="form-otp" class="form-box">
+                <div class="auth-header">
+                    <h2>Xác Thực</h2>
+                    <p id="otp-msg">Mã OTP đã gửi đến email</p>
+                </div>
+                <input type="text" id="otp-input" class="custom-input" placeholder="Nhập mã OTP 6 số" style="text-align: center; font-weight: bold; letter-spacing: 3px;">
+                
+                <div id="reset-pass-fields" style="display: none;">
+                    <input type="password" id="new-pass-reset" class="custom-input" placeholder="Mật khẩu mới">
+                    <input type="password" id="confirm-pass-reset" class="custom-input" placeholder="Nhập lại mật khẩu mới">
+                </div>
+
+                <button onclick="verifyOTP()" class="btn-gradient">XÁC NHẬN</button>
+                <div class="switch-link"><a onclick="location.reload()">Hủy bỏ</a></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- === DASHBOARD VIEW === -->
+    <div id="dashboard-view">
+        <div class="top-bar">
+            <div class="app-title"><i class="fa-solid fa-layer-group"></i> Control Center</div>
+            
+            <!-- USER PROFILE MENU -->
+            <div class="user-profile-container" onclick="toggleProfileMenu()">
+                <div class="user-avatar" id="user-avatar-text">U</div>
+                <div class="user-dropdown" id="user-dropdown">
+                    <div class="dropdown-header">
+                        <div class="d-name" id="menu-username">User</div>
+                        <div class="d-role" id="menu-role">Guest</div>
+                    </div>
+                    <div class="dropdown-item" onclick="goToSettings()"><i class="fas fa-cog"></i> Cài đặt</div>
+                    <div class="dropdown-item logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="weather-widget">
+            <div>
+                <div class="w-temp" id="w-temp">--°</div>
+                <div class="w-desc" id="w-desc">Loading...</div>
+            </div>
+            <div class="w-city">TP.HCM</div>
+        </div>
+
+        <!-- SENSORS -->
+        <div class="grid-container">
+            <div class="sensor-card card-temp">
+                <div class="sensor-info"><h3>NHIỆT ĐỘ</h3><div class="value"><span id="temp-val">--</span>°C</div></div>
+                <div class="sensor-icon"><i class="fas fa-temperature-high"></i></div>
+            </div>
+            <div class="sensor-card card-humid">
+                <div class="sensor-info"><h3>ĐỘ ẨM</h3><div class="value"><span id="humid-val">--</span>%</div></div>
+                <div class="sensor-icon"><i class="fas fa-droplet"></i></div>
+            </div>
+            <div class="sensor-card card-gas">
+                <div class="sensor-info"><h3>KHÍ GA</h3><div class="value"><span id="gas-val">--</span> ppm</div></div>
+                <div class="sensor-icon"><i class="fas fa-wind"></i></div>
+            </div>
+        </div>
+
+        <!-- ALERTS (KHÔI PHỤC) -->
+        <div class="alert-section">
+            <div class="alert-item" id="box-gas"><i class="fas fa-shield-virus"></i><div class="alert-text" id="lbl-gas">KHÔNG KHÍ AN TOÀN</div></div>
+            <div class="alert-item" id="box-rain"><i class="fas fa-sun"></i><div class="alert-text" id="lbl-rain">TRỜI KHÔNG MƯA</div></div>
+        </div>
+
+        <!-- CONTROLS -->
+        <div class="control-grid">
+            <div class="control-card">
+                <h4 style="margin-bottom:15px; color:var(--text-sub)">ĐIỀU KHIỂN</h4>
+                
+                <!-- Fan Button -->
+                <button class="btn-fan-big" id="btn-fan" onclick="toggleFan()"><i class="fas fa-fan"></i> <span>BẬT QUẠT</span></button>
+                
+                <!-- Clothesline Status (KHÔI PHỤC) -->
+                <div class="sao-do-box" id="box-sao-do">
+                    <i class="fas fa-spinner fa-spin"></i> Đang tải trạng thái giàn phơi...
+                </div>
+            </div>
+            
+            <div class="control-card">
+                <h4 style="margin-bottom:15px; color:var(--text-sub)">CAMERA GIÁM SÁT</h4>
+                <div class="camera-box" id="camera-container">
+                    <img id="cam-image" src="" alt="No Signal" style="width:100%; height:100%; object-fit:cover; display:none;">
+                    <div id="cam-loading" style="color:#666">Đang tải...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- === SETTINGS VIEW === -->
+    <div id="settings-view">
+        <button class="btn-back" onclick="goToDashboard()"><i class="fas fa-arrow-left"></i> Quay lại Dashboard</button>
+        <h2 style="margin-bottom: 20px; color: var(--primary);">Cài Đặt Hệ Thống</h2>
+
+        <div class="settings-section">
+            <div class="settings-header"><h3>Giao diện</h3></div>
+            <div class="settings-row">
+                <span>Chế độ nền tối (Dark Mode)</span>
+                <label class="switch-toggle">
+                    <input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <div class="settings-header"><h3>Đổi Mật Khẩu</h3></div>
+            <input type="password" id="old-pass" class="custom-input" placeholder="Mật khẩu cũ">
+            <input type="password" id="new-pass" class="custom-input" placeholder="Mật khẩu mới">
+            <input type="password" id="new-pass-confirm" class="custom-input" placeholder="Nhập lại mật khẩu mới">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <a style="color: var(--primary); cursor: pointer; font-size: 0.9rem;" onclick="forgotPassInSettings()">Quên mật khẩu cũ?</a>
+                <button class="btn-gradient" style="width: auto; padding: 10px 30px;" onclick="changePassword()">Cập nhật</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://iotnett.onrender.com"; 
+        
+        // --- EMAILJS CONFIG ---
+        const EMAILJS_SERVICE_ID = "service_rapvzp7"; 
+        const EMAILJS_TEMPLATE_ID = "template_eic7q3r"; 
+        const EMAILJS_PUBLIC_KEY = "dQz_4d3IL-nG1ai8s";  
+        (function() { if(EMAILJS_PUBLIC_KEY) emailjs.init(EMAILJS_PUBLIC_KEY); })();
+
+        // Variables
+        let pendingUser = null; 
+        let currentOTP = null;
+        let otpMode = ''; 
+
+        // --- INIT ---
+        window.onload = () => {
+            // Check Dark Mode
+            if(localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('dark-mode-toggle').checked = true;
+            }
+
+            // Check Login
+            if(localStorage.getItem('isLoggedIn') === 'true') {
+                showDashboard();
+            }
+        };
+
+        // --- AUTH & NAVIGATION ---
+        function switchForm(formName) {
+            document.querySelectorAll('.form-box').forEach(el => el.classList.remove('active'));
+            document.getElementById(`form-${formName}`).classList.add('active');
+        }
+
+        function toggleProfileMenu() {
+            document.getElementById('user-dropdown').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            const container = document.querySelector('.user-profile-container');
+            if (!container.contains(e.target)) {
+                document.getElementById('user-dropdown').classList.remove('show');
+            }
+        });
+
+        function logout() {
+            if(confirm("Bạn muốn đăng xuất?")) {
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('currentRole');
+                location.reload();
+            }
+        }
+
+        // --- DARK MODE ---
+        function toggleDarkMode() {
+            const isDark = document.getElementById('dark-mode-toggle').checked;
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('darkMode', 'true');
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('darkMode', 'false');
+            }
+        }
+
+        // --- LOGIN ---
+        function handleLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+            const storedUsers = JSON.parse(localStorage.getItem('smartHomeUsers')) || {};
+            
+            const userObj = storedUsers[email];
+            if (userObj && userObj.pass === pass) {
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('currentUser', email);
+                localStorage.setItem('currentRole', userObj.role || 'guest');
+                showDashboard();
+            } else {
+                alert("Sai Email hoặc Mật khẩu!");
+            }
+        }
+
+        // --- OTP LOGIC ---
+        function requestOTP(mode) {
+            otpMode = mode;
+            let email = '';
+            
+            if (mode === 'register') {
+                email = document.getElementById('reg-email').value.trim();
+                const pass = document.getElementById('reg-pass').value.trim();
+                const confirm = document.getElementById('reg-pass-confirm').value.trim();
+                const code = document.getElementById('reg-code').value.trim();
+                
+                if (!email || !pass) return alert("Thiếu thông tin!");
+                if (pass !== confirm) return alert("Mật khẩu không khớp!");
+                
+                const storedUsers = JSON.parse(localStorage.getItem('smartHomeUsers')) || {};
+                if (storedUsers[email]) return alert("Email đã tồn tại!");
+
+                pendingUser = { email, pass, role: (code === 'admin' ? 'admin' : 'guest') };
+            
+            } else if (mode === 'forgot') {
+                email = document.getElementById('forgot-email').value.trim();
+                const storedUsers = JSON.parse(localStorage.getItem('smartHomeUsers')) || {};
+                if (!storedUsers[email]) return alert("Email này chưa đăng ký!");
+                pendingUser = { email };
+
+            } else if (mode === 'reset_setting') {
+                email = localStorage.getItem('currentUser');
+                pendingUser = { email };
+            }
+
+            // Gửi OTP
+            currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            sendEmailJS(email, currentOTP);
+        }
+
+        function sendEmailJS(email, otp) {
+            const msg = `Mã OTP của bạn là: ${otp}`;
+            if (EMAILJS_PUBLIC_KEY) {
+                emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, otp_code: otp, message: msg })
+                    .then(() => showOTPForm(otpMode))
+                    .catch(() => { alert("Lỗi Mail. Test Mode: " + otp); showOTPForm(otpMode); });
+            } else {
+                setTimeout(() => { alert("Test OTP: " + otp); showOTPForm(otpMode); }, 1000);
+            }
+        }
+
+        function showOTPForm(mode) {
+            switchForm('otp');
+            if (mode === 'forgot' || mode === 'reset_setting') {
+                document.getElementById('reset-pass-fields').style.display = 'block';
+            } else {
+                document.getElementById('reset-pass-fields').style.display = 'none';
+            }
+        }
+
+        function verifyOTP() {
+            const input = document.getElementById('otp-input').value.trim();
+            if (input !== currentOTP) return alert("Mã OTP sai!");
+
+            const storedUsers = JSON.parse(localStorage.getItem('smartHomeUsers')) || {};
+
+            if (otpMode === 'register') {
+                storedUsers[pendingUser.email] = { pass: pendingUser.pass, role: pendingUser.role };
+                localStorage.setItem('smartHomeUsers', JSON.stringify(storedUsers));
+                alert("Đăng ký thành công!");
+                switchForm('login');
+
+            } else if (otpMode === 'forgot' || otpMode === 'reset_setting') {
+                const newP = document.getElementById('new-pass-reset').value.trim();
+                const confP = document.getElementById('confirm-pass-reset').value.trim();
+                if (!newP || newP !== confP) return alert("Mật khẩu mới không khớp!");
+
+                if (storedUsers[pendingUser.email]) {
+                    storedUsers[pendingUser.email].pass = newP;
+                    localStorage.setItem('smartHomeUsers', JSON.stringify(storedUsers));
+                    alert("Đổi mật khẩu thành công!");
+                    
+                    if(otpMode === 'reset_setting') goToSettings();
+                    else switchForm('login');
+                }
+            }
+            pendingUser = null; currentOTP = null;
+        }
+
+        // --- DASHBOARD & SETTINGS LOGIC ---
+        function showDashboard() {
+            document.getElementById('auth-view').style.display = 'none';
+            document.getElementById('settings-view').style.display = 'none';
+            document.getElementById('dashboard-view').style.display = 'block';
+            
+            const email = localStorage.getItem('currentUser');
+            const role = localStorage.getItem('currentRole');
+            document.getElementById('menu-username').innerText = email.split('@')[0];
+            document.getElementById('menu-role').innerText = role;
+            document.getElementById('user-avatar-text').innerText = email.charAt(0).toUpperCase();
+
+            // Phân quyền UI ban đầu
+            if (role !== 'admin') {
+                document.getElementById('btn-fan').classList.add('disabled');
+                document.getElementById('camera-container').innerHTML = '<div style="color:#aaa; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%"><i class="fas fa-lock fa-2x"></i><br>Admin Only</div>';
+            }
+
+            setInterval(fetchData, 2000);
+            fetchData();
+        }
+
+        function goToSettings() {
+            document.getElementById('dashboard-view').style.display = 'none';
+            document.getElementById('settings-view').style.display = 'block';
+            document.getElementById('old-pass').value = '';
+            document.getElementById('new-pass').value = '';
+            document.getElementById('new-pass-confirm').value = '';
+        }
+
+        function goToDashboard() {
+            document.getElementById('settings-view').style.display = 'none';
+            document.getElementById('dashboard-view').style.display = 'block';
+        }
+
+        function changePassword() {
+            const oldP = document.getElementById('old-pass').value;
+            const newP = document.getElementById('new-pass').value;
+            const confP = document.getElementById('new-pass-confirm').value;
+            const email = localStorage.getItem('currentUser');
+            const storedUsers = JSON.parse(localStorage.getItem('smartHomeUsers'));
+
+            if (storedUsers[email].pass !== oldP) return alert("Mật khẩu cũ không đúng!");
+            if (newP.length < 6) return alert("Mật khẩu quá ngắn!");
+            if (newP !== confP) return alert("Mật khẩu mới không khớp!");
+
+            storedUsers[email].pass = newP;
+            localStorage.setItem('smartHomeUsers', JSON.stringify(storedUsers));
+            alert("Cập nhật mật khẩu thành công!");
+            document.getElementById('old-pass').value = '';
+            document.getElementById('new-pass').value = '';
+            document.getElementById('new-pass-confirm').value = '';
+        }
+
+        function forgotPassInSettings() {
+            if(confirm("Hệ thống sẽ gửi OTP về email hiện tại để đặt lại mật khẩu?")) {
+                document.getElementById('settings-view').style.display = 'none';
+                document.getElementById('auth-view').style.display = 'flex';
+                requestOTP('reset_setting');
+            }
+        }
+
+        // --- FETCH DATA (LOGIC ĐÃ KHÔI PHỤC) ---
+        async function fetchData() {
+            const role = localStorage.getItem('currentRole');
+            try {
+                const res = await fetch(`${API_URL}/api/data`);
+                const data = await res.json();
+
+                // 1. Weather & Sensors
+                document.getElementById('w-temp').innerText = Math.round(data.weatherOnline?.temp || 0) + "°";
+                document.getElementById('w-desc').innerText = data.weatherOnline?.desc || "";
+                document.getElementById('temp-val').innerText = data.temp;
+                document.getElementById('humid-val').innerText = data.humid;
+                document.getElementById('gas-val').innerText = data.gas;
+
+                // 2. KHÔI PHỤC ALERT (Gas & Rain)
+                const boxGas = document.getElementById('box-gas');
+                const lblGas = document.getElementById('lbl-gas');
+                const iconGas = boxGas.querySelector('i');
+                if (data.alerts.gasDanger) {
+                    boxGas.className = "alert-item danger-mode";
+                    lblGas.innerText = "CẢNH BÁO KHÍ GA!";
+                    iconGas.className = "fas fa-radiation";
+                } else {
+                    boxGas.className = "alert-item";
+                    lblGas.innerText = "KHÔNG KHÍ AN TOÀN";
+                    iconGas.className = "fas fa-shield-virus";
+                }
+
+                const boxRain = document.getElementById('box-rain');
+                const lblRain = document.getElementById('lbl-rain');
+                const iconRain = boxRain.querySelector('i');
+                if (data.rain == 1) { 
+                    boxRain.className = "alert-item rain-mode";
+                    lblRain.innerText = "TRỜI ĐANG MƯA";
+                    iconRain.className = "fas fa-cloud-showers-heavy";
+                } else {
+                    boxRain.className = "alert-item";
+                    lblRain.innerText = "TRỜI TẠNH RÁO";
+                    iconRain.className = "fas fa-sun";
+                }
+
+                // 3. KHÔI PHỤC TRẠNG THÁI SÀO PHƠI
+                const boxSaoDo = document.getElementById('box-sao-do');
+                if (data.controls.servo == 1) {
+                    boxSaoDo.innerHTML = '<i class="fas fa-umbrella"></i> ĐÃ THU SÀO (TRÁNH MƯA)';
+                    // Style động khi mưa
+                    boxSaoDo.style.background = "rgba(255, 107, 107, 0.1)";
+                    boxSaoDo.style.color = "var(--danger)";
+                    boxSaoDo.style.borderColor = "var(--danger)";
+                } else {
+                    boxSaoDo.innerHTML = '<i class="fas fa-tshirt"></i> ĐANG PHƠI (TRỜI ĐẸP)';
+                    // Style động khi nắng
+                    boxSaoDo.style.background = "rgba(29, 209, 161, 0.1)";
+                    boxSaoDo.style.color = "var(--success)";
+                    boxSaoDo.style.borderColor = "var(--success)";
+                }
+
+                // 4. Fan Logic
+                const btnFan = document.getElementById('btn-fan');
+                if (role === 'admin') {
+                    if (data.controls.fan == 1) {
+                        btnFan.classList.add("active");
+                        btnFan.querySelector('span').innerText = "QUẠT ĐANG BẬT";
+                    } else {
+                        btnFan.classList.remove("active");
+                        btnFan.querySelector('span').innerText = "BẬT QUẠT";
+                    }
+                } else {
+                    btnFan.querySelector('span').innerText = "CHỈ DÀNH CHO ADMIN";
+                }
+
+                // 5. Camera Logic
+                if (role === 'admin' && data.image && data.image.length > 50) {
+                    const img = document.getElementById('cam-image');
+                    img.src = "data:image/jpeg;base64," + data.image;
+                    img.style.display = "block";
+                    document.getElementById('cam-loading').style.display = "none";
+                }
+
+            } catch (err) { console.error(err); }
+        }
+
+        async function toggleFan() {
+            if (localStorage.getItem('currentRole') !== 'admin') return alert("Bạn không có quyền Admin!");
+            const btn = document.getElementById('btn-fan');
+            const newState = btn.classList.contains('active') ? 0 : 1;
+            
+            if(newState) btn.classList.add('active'); else btn.classList.remove('active');
+
+            await fetch(`${API_URL}/api/control`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ device: 'fan', status: newState })
+            });
+        }
+    </script>
+</body>
+</html>
